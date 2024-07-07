@@ -1,20 +1,13 @@
 import React, { useEffect, useState } from "react";
+import ButtonComponent from "./Components/ButtonComponent";
 const { ipcRenderer } = window.require("electron");
 
-function SerialPortComponent() {
-    const [ports, setPorts] = useState([]);
+function App() {
     const [selectedPort, setSelectedPort] = useState("");
     const [receivedMessages, setReceivedMessages] = useState([]);
     const [message, setMessage] = useState("");
 
     useEffect(() => {
-        const fetchPorts = async () => {
-            const availablePorts = await ipcRenderer.invoke("list-ports");
-            setPorts(availablePorts);
-        };
-
-        fetchPorts();
-
         ipcRenderer.on("serial-data", (event, data) => {
             setReceivedMessages((prevMessages) => [...prevMessages, data]);
         });
@@ -23,28 +16,6 @@ function SerialPortComponent() {
             ipcRenderer.removeAllListeners("serial-data");
         };
     }, []);
-
-    const handleOpenPort = async () => {
-        if (selectedPort) {
-            try {
-                const response = await ipcRenderer.invoke("open-port", selectedPort);
-                console.log(response);
-            } catch (error) {
-                console.log("Failed to open port:", error);
-            }
-        } else {
-            console.warn("No port selected");
-        }
-    };
-
-    const handleClosePort = async () => {
-        try {
-            const response = await ipcRenderer.invoke("close-port");
-            console.log(response);
-        } catch (error) {
-            console.log("Failed to close port:", error);
-        }
-    };
 
     const handleSend = async () => {
         if (selectedPort) {
@@ -59,50 +30,45 @@ function SerialPortComponent() {
         }
     };
 
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setMessage(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    const handleSave = () => {
+        const blob = new Blob([message], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "commands.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Serial Port Communication</h1>
-            <div className="mb-4">
-                <select className="border rounded p-2 mr-2" onChange={(e) => setSelectedPort(e.target.value)} value={selectedPort}>
-                    <option value="" disabled>
-                        Select a COM port
-                    </option>
-                    {ports.map((port) => (
-                        <option key={port.path} value={port.path}>
-                            {port.path}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <ButtonComponent handleSend={handleSend} selectedPort={selectedPort} setSelectedPort={setSelectedPort} handleFileUpload={handleFileUpload} handleSave={handleSave} />
 
-            <textarea type="text" className="border rounded p-2 mr-2 h-[300px] w-[400px]" placeholder="Data to send" value={message} onChange={(e) => setMessage(e.target.value)} />
-
-            <div className="mb-4">
-                <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2" onClick={handleOpenPort}>
-                    Open
-                </button>
-
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2" onClick={handleSend}>
-                    Run
-                </button>
-
-                <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={handleClosePort}>
-                    Close
-                </button>
-            </div>
+            <textarea
+                type="text"
+                className="border rounded p-2 mr-2 h-[300px] w-full"
+                placeholder="Commands to send"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+            />
 
             <div>
                 <h2 className="text-lg font-bold mb-2">Received Messages:</h2>
-                <ul className="list-disc pl-4">
-                    {receivedMessages.map((msg, index) => (
-                        <li key={index} className="mb-1">
-                            {msg}
-                        </li>
-                    ))}
-                </ul>
+                <p className="list-disc pl-4">{receivedMessages}</p>
             </div>
         </div>
     );
 }
 
-export default SerialPortComponent;
+export default App;
