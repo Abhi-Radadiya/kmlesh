@@ -12,6 +12,7 @@
         "@testing-library/user-event": "^13.5.0",
         "detect-port": "^1.6.1",
         "docx": "^8.5.0",
+        "exceljs": "^4.4.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-scripts": "5.0.1",
