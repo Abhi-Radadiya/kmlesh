@@ -84,8 +84,8 @@ ipcMain.handle("open-port", async (event, portPath) => {
     return "Port opened successfully";
 });
 
-ipcMain.handle("send-data", async (event, portPath, data) => {
-    if (!activePort || activePort.path !== portPath) {
+ipcMain.handle("send-data", async (data) => {
+    if (!activePort) {
         throw new Error("Port is not opened");
     }
 

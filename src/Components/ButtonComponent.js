@@ -2,7 +2,20 @@ import React, { useEffect, useState } from "react";
 const { ipcRenderer } = window.require("electron");
 
 function ButtonComponent(props) {
-    const { handleClickRun, handleFileUpload, selectedPort, setSelectedPort, thresholdValue, setThresholdValue, errors, setErrors, currentExeCmd } = props;
+    const {
+        handleClickRun,
+        handleFileUpload,
+        selectedPort,
+        setSelectedPort,
+        thresholdValue,
+        setThresholdValue,
+        errors,
+        setErrors,
+        currentExeCmd,
+        handleSave,
+        handlePause,
+        handleStop,
+    } = props;
 
     const [ports, setPorts] = useState([]);
 
@@ -16,6 +29,10 @@ function ButtonComponent(props) {
     }, []);
 
     const onSelectPort = async (port) => {
+        setErrors((prevState) => {
+            const { port, ...rest } = prevState;
+            return { ...rest };
+        });
         setSelectedPort(port);
     };
 
@@ -82,12 +99,21 @@ function ButtonComponent(props) {
                             Upload
                         </label>
 
-                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100">Save</button>
+                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100" onClick={handleSave}>
+                            Save
+                        </button>
+
                         <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100" onClick={handleClickRun}>
                             Run
                         </button>
-                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100">Stop</button>
-                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100">Pause</button>
+
+                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100" onClick={handlePause}>
+                            Pause
+                        </button>
+
+                        <button className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100" onClick={handleStop}>
+                            Stop
+                        </button>
                     </div>
 
                     <div className="flex flex-row items-center h-fit gap-4">
@@ -106,7 +132,7 @@ function ButtonComponent(props) {
                             <div className="relative">
                                 <input
                                     type="number"
-                                    value={thresholdValue}
+                                    value={thresholdValue ?? ""}
                                     onChange={(e) => handleEnterThreshold(e.target.value)}
                                     name="threshold"
                                     className={`px-4 py-2 border rounded-lg ${errors?.threshold ? "border-red-400" : "border-neutral-300"}`}
