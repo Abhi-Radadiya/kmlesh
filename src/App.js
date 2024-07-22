@@ -24,11 +24,14 @@ function App() {
 
     const executeNextCommand = async (index) => {
         if (pausedRef.current || index >= inputCmd.split("\n").length) {
+            setCurrentCmdIndex(0);
             return;
         }
 
         let command = inputCmd.split("\n")[index].toUpperCase();
         window.electron.logAction("Execute Command", command, "FF0000FF");
+
+        console.log("command ==>", command);
 
         try {
             if (command.includes("V ON")) {
@@ -52,10 +55,23 @@ function App() {
         }
 
         if (!pausedRef.current) {
-            executeNextCommand(index + 1);
+            await executeNextCommand(index + 1);
             setCurrentCmdIndex(index + 1);
         }
     };
+
+    // const handleClickRun = async () => {
+    //     for (let i = 0; i < 10; i++) {
+    //         const response = await window.electron.sendData("R1V5-0");
+    //         const now = new Date();
+    //         const minutes = String(now.getMinutes()).padStart(2, "0");
+    //         const seconds = String(now.getSeconds()).padStart(2, "0");
+    //         const timestamp = `${minutes}:${seconds}`;
+    //         console.log("pin ==>", response, "timestamp ==>", timestamp);
+
+    //         await new Promise((resolve) => setTimeout(resolve, 500)); // Ensuring a delay between commands
+    //     }
+    // };
 
     const handleClickRun = () => {
         let error = false;
@@ -75,6 +91,7 @@ function App() {
         if (error) {
             return;
         }
+
         pausedRef.current = false;
         executeNextCommand(currentCmdIndex);
     };
@@ -111,85 +128,23 @@ function App() {
         setInputCmd(inputCmd);
     };
 
-    // const handleVOnCommand = async (command) => {
-    //     const Sstr = command.substring(4);
-    //     let count = [...Sstr].filter((c) => c === "V").length;
-
-    //     console.log("count ==>", command, count);
-
-    //     if (count > 0) {
-    //         const Reactor = command.substring(0, 2);
-    //         let start_pos = command.indexOf(" ", 6);
-    //         let end_pos = command.indexOf(",", 3);
-
-    //         for (let i = 0; i < count; i++) {
-    //             let pin = `${Reactor}V${command.substring(start_pos + 1, end_pos - start_pos - 1)}-1`;
-    //             // window.electron.sendData(pin);
-    //             await new Promise((resolve) => setTimeout(resolve, 50));
-    //             start_pos = end_pos;
-    //             end_pos = command.indexOf(",", start_pos + 1);
-    //         }
-
-    //         let pins = `${Reactor}V${command.substring(start_pos + 1)}-1`;
-    //         // window.electron.sendData(pins);
-    //         await new Promise((resolve) => setTimeout(resolve, 50));
-    //     } else {
-    //         const Reactor = command.substring(0, 2);
-    //         let spa = command.indexOf(" ", 6);
-    //         let pin = `${Reactor}V${command.substring(spa + 1)}-1`;
-    //         // window.electron.sendData(pin);
-    //     }
-    // };
-
-    // const handleVOnCommand = async (command) => {
-    //     let Sstr = command.substring(4);
-
-    //     console.log("Sstr ==>", Sstr, command);
-
-    //     let count = (Sstr.match(/V/g) || []).length; // Count occurrences of 'V'
-    //     const Reactor = command.substring(0, 2);
-
-    //     const sendPinCommand = async (pin) => {
-    //         console.log("pin ==>", pin);
-    //         // window.electron.sendData(pin);
-    //         // await new Promise((resolve) => setTimeout(resolve, 50));
-    //     };
-
-    //     console.log("count ==>", count);
-
-    //     if (count > 0) {
-    //         let start_pos = command.indexOf(" ", 6);
-    //         let end_pos = command.indexOf(",", 3);
-
-    //         for (let i = 0; i < count; i++) {
-    //             let pin = `${Reactor}V${command.substring(start_pos + 1, end_pos - start_pos - 1)}-1`;
-    //             await sendPinCommand(pin);
-
-    //             start_pos = end_pos;
-    //             end_pos = command.indexOf(",", start_pos + 1);
-    //         }
-
-    //         let pins = `${Reactor}V${command.substring(start_pos + 1)}-1`;
-    //         await sendPinCommand(pins);
-    //     } else {
-    //         let spa = command.indexOf(" ", 6);
-    //         let pin = `${Reactor}V${command.substring(spa + 1)}-1`;
-    //         await sendPinCommand(pin);
-    //     }
-    // };
+    const sendPinCommand = async (pin) => {
+        console.log("pin ==>", pin);
+        try {
+            const response = await window.electron.sendData(pin);
+            console.log(response);
+            await new Promise((resolve) => setTimeout(resolve, 50)); // Ensuring a delay between commands
+        } catch (error) {
+            console.error("Failed to send pin command:", error);
+        }
+    };
 
     const handleVOnCommand = async (command) => {
         const Reactor = command.substring(0, 2); // Reactor number
-        const sendPinCommand = async (pin) => {
-            window.electron.sendData(pin);
-            await new Promise((resolve) => setTimeout(resolve, 50));
-        };
 
-        // Extract the part after "V ON "
         const pinsPart = command.substring(command.indexOf("V ON") + 5).trim();
         const pinList = pinsPart.split(",");
 
-        // Loop through each pin and send the command
         for (let pin of pinList) {
             let fullPinCommand = `${Reactor}V${pin.trim()}-1`;
             await sendPinCommand(fullPinCommand);
@@ -197,32 +152,14 @@ function App() {
     };
 
     const handleVOffCommand = async (command) => {
-        const Sstr = command.substring(4);
-        let count = [...Sstr].filter((c) => c === "V").length;
+        const Reactor = command.substring(0, 2); // Reactor number
 
-        if (count > 0) {
-            const Reactor = command.substring(0, 2);
-            let start_pos = command.indexOf(" ", 6);
-            let end_pos = command.indexOf(",", 3);
+        const pinsPart = command.substring(command.indexOf("V OFF") + 5).trim();
+        const pinList = pinsPart.split(",");
 
-            for (let i = 0; i < count; i++) {
-                let pin = `${Reactor}V${command.substring(start_pos + 1, end_pos - start_pos - 1)}-0`;
-                // window.electron.sendData(pin);
-                await new Promise((resolve) => setTimeout(resolve, 50));
-                start_pos = end_pos;
-                end_pos = command.indexOf(",", start_pos + 1);
-            }
-
-            let pins = `${Reactor}V${command.substring(start_pos + 1)}-0`;
-            // window.electron.sendData(pins);
-
-            await new Promise((resolve) => setTimeout(resolve, 50));
-        } else {
-            const Reactor = command.substring(0, 2);
-            let spa = command.indexOf(" ", 6);
-            let pin = `${Reactor}V${command.substring(spa + 1)}-0`;
-            console.log("pin else voff ==>", pin);
-            // window.electron.sendData(pin);
+        for (let pin of pinList) {
+            let fullPinCommand = `${Reactor}V${pin.trim()}-0`;
+            await sendPinCommand(fullPinCommand);
         }
     };
 
@@ -251,7 +188,7 @@ function App() {
         let sep = command.indexOf(",", 3);
         let spa = command.indexOf(" ");
         let pin = `${Reactor}S${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}-0.00`;
-        // window.electron.sendData(pin);
+        window.electron.sendData(pin);
     };
 
     const handleZCommand = async (command) => {
@@ -259,14 +196,14 @@ function App() {
         let sep = command.indexOf(",", 3);
         let spa = command.indexOf(" ");
         let pin = `${Reactor}Z${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}-0.00`;
-        // window.electron.sendData(pin);
+        window.electron.sendData(pin);
     };
 
     const handlePumpCommand = async (command) => {
         const Reactor = command.substring(0, 2);
         let sep = command.indexOf("-");
         let pin = `${Reactor}P${command.substring(sep)}`;
-        // window.electron.sendData(pin);
+        window.electron.sendData(pin);
     };
 
     const handlePause = () => {
