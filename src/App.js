@@ -5,12 +5,14 @@ function App() {
     const [selectedPort, setSelectedPort] = useState("");
     const [receivedMessages, setReceivedMessages] = useState([]);
     const [inputCmd, setInputCmd] = useState("");
-    const [thresholdValue, setThresholdValue] = useState(1);
+    const [thresholdValue, setThresholdValue] = useState(null);
     const [errors, setErrors] = useState({});
     const [currentCmdIndex, setCurrentCmdIndex] = useState(0);
     const [counter, setCounter] = useState(0);
     const timeoutRef = useRef(null);
     const pausedRef = useRef(false);
+
+    console.log("receivedMessages ==>", receivedMessages);
 
     useEffect(() => {
         const unsubscribe = window.electron.onSerialData((data) => {
@@ -54,24 +56,11 @@ function App() {
             window.electron.logAction("Error", `Error executing command: ${error.message}`, "FFFF0000");
         }
 
-        if (!pausedRef.current) {
-            await executeNextCommand(index + 1);
-            setCurrentCmdIndex(index + 1);
-        }
+        // if (!pausedRef.current) {
+        executeNextCommand(index + 1);
+        setCurrentCmdIndex(index + 1);
+        // }
     };
-
-    // const handleClickRun = async () => {
-    //     for (let i = 0; i < 10; i++) {
-    //         const response = await window.electron.sendData("R1V5-0");
-    //         const now = new Date();
-    //         const minutes = String(now.getMinutes()).padStart(2, "0");
-    //         const seconds = String(now.getSeconds()).padStart(2, "0");
-    //         const timestamp = `${minutes}:${seconds}`;
-    //         console.log("pin ==>", response, "timestamp ==>", timestamp);
-
-    //         await new Promise((resolve) => setTimeout(resolve, 500)); // Ensuring a delay between commands
-    //     }
-    // };
 
     const handleClickRun = () => {
         let error = false;
@@ -105,6 +94,7 @@ function App() {
                 window.electron.logAction("File Upload", `File content loaded: ${file.name}`, "FF0000FF");
             };
             reader.readAsText(file);
+            setThresholdValue(1);
         }
     };
 
@@ -185,18 +175,48 @@ function App() {
 
     const handleSCommand = async (command) => {
         const Reactor = command.substring(0, 2);
-        let sep = command.indexOf(",", 3);
-        let spa = command.indexOf(" ");
-        let pin = `${Reactor}S${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}-0.00`;
-        window.electron.sendData(pin);
+        const sep = command.indexOf(",", 3);
+        const spa = command.indexOf(" ");
+
+        let pin = `${Reactor}S${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}`;
+
+        const thresholdString = thresholdValue.toString();
+
+        if (thresholdString.includes(".")) {
+            pin = `${pin}-${thresholdString}`;
+        } else {
+            pin = `${pin}-${thresholdString}.00`;
+        }
+
+        try {
+            await window.electron.sendData(pin);
+            console.log("Data sent:", pin);
+        } catch (error) {
+            console.error("Failed to send data:", error);
+        }
     };
 
     const handleZCommand = async (command) => {
         const Reactor = command.substring(0, 2);
-        let sep = command.indexOf(",", 3);
-        let spa = command.indexOf(" ");
-        let pin = `${Reactor}Z${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}-0.00`;
-        window.electron.sendData(pin);
+        const sep = command.indexOf(",", 3);
+        const spa = command.indexOf(" ");
+
+        let pin = `${Reactor}Z${command.substring(spa + 1, sep - spa - 1)}-${command.substring(sep + 1)}`;
+
+        const thresholdString = thresholdValue.toString();
+
+        if (thresholdString.includes(".")) {
+            pin = `${pin}-${thresholdString}`;
+        } else {
+            pin = `${pin}-${thresholdString}.00`;
+        }
+
+        try {
+            await window.electron.sendData(pin);
+            console.log("Data sent:", pin);
+        } catch (error) {
+            console.error("Failed to send data:", error);
+        }
     };
 
     const handlePumpCommand = async (command) => {
@@ -226,6 +246,8 @@ function App() {
         }
     };
 
+    console.log("selectedPort ==>", !selectedPort);
+
     return (
         <div className="p-4">
             <ButtonComponent
@@ -244,6 +266,7 @@ function App() {
             />
 
             <textarea
+                disabled={!selectedPort}
                 type="text"
                 className={`border rounded-lg p-2 mr-2 mt-2 h-[300px] w-full block ${errors?.inputCmd ? "border-red-400" : "border-neutral-300"}`}
                 placeholder="Commands to send"
@@ -253,14 +276,16 @@ function App() {
 
             {errors?.inputCmd && <span className="text-xs text-red-400"> * {errors?.inputCmd}</span>}
 
-            {/* <div>
-          <h2 className="text-lg font-bold mb-2">Received Messages:</h2>
-          <ul className="list-disc pl-4">
-              {receivedMessages.map((msg, index) => (
-                  <li key={index}>{msg}</li>
-              ))}
-          </ul>
-      </div> */}
+            <div>
+                <h2 className="text-lg font-bold mb-2">Received Messages:</h2>
+                <div className="pl-4 pt-2">
+                    {receivedMessages.map((msg, index) => (
+                        <div className="pt-2" key={index}>
+                            {msg}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
