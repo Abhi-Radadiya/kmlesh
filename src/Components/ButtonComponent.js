@@ -88,7 +88,7 @@ function ButtonComponent(props) {
                     {errors?.port && <span className="text-xs text-red-400 absolute bottom-0 left-0"> * {errors?.port}</span>}
                 </div>
 
-                <div className="flex flex-row justify-between">
+                <div className="flex flex-col justify-between">
                     <div className="flex items-center gap-4 mb-4">
                         <input disabled={!selectedPort} type="file" accept=".txt" onChange={handleFileUpload} className="hidden" id="file-upload" />
                         <label

@@ -12,19 +12,31 @@ function App() {
     const timeoutRef = useRef(null);
     const pausedRef = useRef(false);
 
-    console.log("receivedMessages ==>", receivedMessages);
+    const [sensorMode, setSensorMode] = useState(1);
+
+    const [errorMessage, setErrorMessage] = useState("");
+    const [showErrorModal, setShowErrorModal] = useState(false);
 
     useEffect(() => {
         const unsubscribe = window.electron.onSerialData((data) => {
             setReceivedMessages((prevMessages) => [...prevMessages, data]);
+
+            if (data.indexOf("F") >= 0) {
+                setErrorMessage(sensorMode === 1 ? "No Liquid Detected.....!" : "Liquid Detected.....!");
+                setShowErrorModal(true);
+                pausedRef.current = true;
+                setCurrentCmdIndex(0);
+            }
         });
 
         return () => {
             unsubscribe();
         };
-    }, []);
+    }, [sensorMode]);
 
     const executeNextCommand = async (index) => {
+        console.log("pausedRef.current ==>", pausedRef.current);
+
         if (pausedRef.current || index >= inputCmd.split("\n").length) {
             setCurrentCmdIndex(0);
             return;
@@ -56,10 +68,10 @@ function App() {
             window.electron.logAction("Error", `Error executing command: ${error.message}`, "FFFF0000");
         }
 
-        // if (!pausedRef.current) {
-        executeNextCommand(index + 1);
-        setCurrentCmdIndex(index + 1);
-        // }
+        if (!pausedRef.current) {
+            executeNextCommand(index + 1);
+            setCurrentCmdIndex(index + 1);
+        }
     };
 
     const handleClickRun = () => {
@@ -82,7 +94,12 @@ function App() {
         }
 
         pausedRef.current = false;
-        executeNextCommand(currentCmdIndex);
+
+        if (currentCmdIndex === inputCmd.split("\n").length) {
+            setCurrentCmdIndex(0);
+        }
+
+        executeNextCommand(currentCmdIndex === inputCmd.split("\n").length ? 0 : currentCmdIndex);
     };
 
     const handleFileUpload = (event) => {
@@ -119,7 +136,6 @@ function App() {
     };
 
     const sendPinCommand = async (pin) => {
-        console.log("pin ==>", pin);
         try {
             const response = await window.electron.sendData(pin);
             console.log(response);
@@ -174,6 +190,7 @@ function App() {
     };
 
     const handleSCommand = async (command) => {
+        setSensorMode(1);
         const Reactor = command.substring(0, 2);
         const sep = command.indexOf(",", 3);
         const spa = command.indexOf(" ");
@@ -197,6 +214,7 @@ function App() {
     };
 
     const handleZCommand = async (command) => {
+        setSensorMode(2);
         const Reactor = command.substring(0, 2);
         const sep = command.indexOf(",", 3);
         const spa = command.indexOf(" ");
@@ -236,7 +254,7 @@ function App() {
     };
 
     const handleStop = () => {
-        pausedRef.current = false;
+        pausedRef.current = true;
         setCurrentCmdIndex(0);
         setCounter(0);
         window.electron.logAction("Stop", "Execution stopped", "FF00FFFF");
@@ -245,8 +263,6 @@ function App() {
             timeoutRef.current = null;
         }
     };
-
-    console.log("selectedPort ==>", !selectedPort);
 
     return (
         <div className="p-4">
@@ -268,7 +284,7 @@ function App() {
             <textarea
                 disabled={!selectedPort}
                 type="text"
-                className={`border rounded-lg p-2 mr-2 mt-2 h-[300px] w-full block ${errors?.inputCmd ? "border-red-400" : "border-neutral-300"}`}
+                className={`border rounded-lg p-2 mr-2 mt-4 h-[300px] w-full block ${errors?.inputCmd ? "border-red-400" : "border-neutral-300"}`}
                 placeholder="Commands to send"
                 value={inputCmd ?? ""}
                 onChange={(e) => handleInputCmd(e.target.value)}
@@ -286,6 +302,20 @@ function App() {
                     ))}
                 </div>
             </div>
+
+            {showErrorModal && (
+                <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-[60vh] w-full">
+                        <div className="flex flex-row justify-between">
+                            <h1 className="font-bold">Error</h1>
+                            <span className="text-red-600 text-xl font-bold cursor-pointer float-right" onClick={() => setShowErrorModal(false)}>
+                                &times;
+                            </span>
+                        </div>
+                        <p className="mt-4">{errorMessage}</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
