@@ -90,7 +90,7 @@ app.on("activate", function () {
 ipcMain.handle("list-ports", async () => {
     try {
         const ports = await SerialPort.list();
-        console.log("ports ==> ", ports);
+        // console.log("ports ==> ", ports);
         return ports;
     } catch (error) {
         console.error("Error listing ports:", error);

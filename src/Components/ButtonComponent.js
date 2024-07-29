@@ -1,18 +1,43 @@
 import React, { useEffect, useState } from "react";
 
 function ButtonComponent(props) {
-    const { handleClickRun, selectedPort, setSelectedPort, thresholdValue, setThresholdValue, errors, setErrors, currentExeCmd, handleSave, handlePause, handleStop } = props;
+    const {
+        handleClickRun,
+        selectedPort,
+        setSelectedPort,
+        thresholdValue,
+        setThresholdValue,
+        errors,
+        setErrors,
+        currentExeCmd,
+        handleSave,
+        handlePause,
+        handleStop,
+        inputCmd,
+        setCurrentCmdIndex,
+    } = props;
 
     const [ports, setPorts] = useState([]);
 
     useEffect(() => {
-        const fetchPorts = async () => {
-            const availablePorts = await window.electron.listPorts();
-            setPorts(availablePorts);
+        const fetchPortInfo = async () => {
+            const { ports, selectedPort } = await window.electron.getPortInfo();
+            setPorts(ports);
+            // setSelectedPort(selectedPort ? `Currently selected port: ${selectedPort}` : "No port selected");
         };
 
-        fetchPorts();
+        fetchPortInfo();
     }, []);
+
+    // useEffect(() => {
+    //     const handlePortDisconnection = () => {
+    //         setSelectedPort("");
+    //     };
+
+    //     const cleanup = window.electron.onPortDisconnected(handlePortDisconnection);
+
+    //     return cleanup;
+    // }, []);
 
     const onSelectPort = async (port) => {
         setErrors((prevState) => {
@@ -21,7 +46,6 @@ function ButtonComponent(props) {
         });
         setSelectedPort(port);
         window.electron.logAction("Port Selection", `Port: ${port}`, "FFFFFF");
-        handleClosePort();
         openPort(port);
     };
 
@@ -34,17 +58,6 @@ function ButtonComponent(props) {
             // action, details, color
             window.electron.logAction("Error : Open Port", `${port}`, "ff0000");
             console.log("Failed to open port:", error);
-        }
-    };
-
-    const handleClosePort = async () => {
-        try {
-            const response = await window.electron.closePort();
-            console.log(response);
-            window.electron.logAction("Close Port", "Port closed", "FFFFFF");
-        } catch (error) {
-            window.electron.logAction("Error : Close Port", `${error}`, "ff0000");
-            console.log("Failed to close port:", error);
         }
     };
 
@@ -65,26 +78,43 @@ function ButtonComponent(props) {
         window.electron.logAction("Enter Threshold", `Threshold: ${threshold}`, "FFFFFF");
     };
 
+    const [selectedCommand, setSelectedCommand] = useState("");
+
+    const commands = inputCmd.split("\n").filter((cmd) => cmd.trim() !== "");
+
+    const handleCommandChange = async (command, index) => {
+        setSelectedCommand(command);
+        setCurrentCmdIndex(index);
+        setIsOpen(false);
+    };
+
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
         <div className="w-full flex justify-center items-center">
             <div className="bg-white w-full">
                 <div className="border-b border-neutral-300 pb-4 mb-4 relative">
                     <h3 className="text-lg font-bold">Port section</h3>
 
-                    <select
-                        className={`border rounded-md p-2 mr-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
-                        onChange={(e) => onSelectPort(e.target.value)}
-                        value={selectedPort}
-                    >
-                        <option value="" disabled>
-                            Select a port
-                        </option>
-                        {ports.map((port) => (
-                            <option key={port.path} value={port.path}>
-                                {port.path}
+                    <div className="flex flex-row items-center">
+                        <select
+                            className={`border rounded-md p-2 mr-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
+                            onChange={(e) => onSelectPort(e.target.value)}
+                            value={selectedPort}
+                        >
+                            <option value="" disabled>
+                                Select a port
                             </option>
-                        ))}
-                    </select>
+                            {ports.map((port) => (
+                                <option key={port.path} value={port.path}>
+                                    {port.path}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* {!!selectedPort ? <div className="rounded-full w-3 h-3 bg-green-500" /> : <div className="rounded-full w-3 h-3 bg-red-500" />} */}
+                    </div>
+
                     {errors?.port && <span className="text-xs text-red-400 absolute bottom-0 left-0"> * {errors?.port}</span>}
                 </div>
 
@@ -126,6 +156,50 @@ function ButtonComponent(props) {
                         >
                             &#4; Stop
                         </button>
+                        {/* <div>
+                            <select
+                                id="commandDropdown"
+                                className={`border rounded-md p-2 mr-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
+                                value={selectedCommand}
+                                onChange={handleCommandChange}
+                            >
+                                <option value="" disabled>
+                                    Select a command
+                                </option>
+                                {commands.map((cmd, index) => (
+                                    <option key={index} value={cmd}>
+                                        {cmd}
+                                    </option>
+                                ))}
+                            </select>
+                        </div> */}
+                        <div className="relative inline-block text-left">
+                            <div>
+                                <button
+                                    type="button"
+                                    className={`border rounded-md p-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
+                                    onClick={() => setIsOpen(!isOpen)}
+                                >
+                                    {selectedCommand || "Select a command"} <span className="ml-2">&#9662;</span>
+                                </button>
+                            </div>
+
+                            {isOpen && (
+                                <div className="origin-top-right absolute right-0 mt-2 z-10 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                    <ul className="max-h-72 overflow-y-auto">
+                                        {commands.map((cmd, index) => (
+                                            <li
+                                                key={index}
+                                                className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-200"
+                                                onClick={() => handleCommandChange(cmd, index)}
+                                            >
+                                                {cmd}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex flex-row items-center h-fit gap-4">
