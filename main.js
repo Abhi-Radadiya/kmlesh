@@ -67,18 +67,6 @@ async function createWindow() {
     // mainWindow.loadURL("https://kmlesh.vercel.app/");
     mainWindow.webContents.openDevTools();
 
-    // const ports = await SerialPort.list();
-
-    // if (ports.length > 0) {
-    //     activePort = new SerialPort({ path: ports[0].path, baudRate: 9600 });
-    //     console.log("Opened port:", activePort.path);
-
-    //     // Log action to Excel
-    //     await logAction("Port Opened", `Port: ${activePort.path}`, "FF00FF00");
-    // } else {
-    //     console.log("No ports available to open.");
-    // }
-
     mainWindow.on("closed", function () {
         mainWindow = null;
     });
@@ -146,7 +134,7 @@ ipcMain.handle("open-port", async (event, portPath) => {
     });
 
     activePort.on("close", () => {
-        console.log("Port closed");
+        console.log("Port closed", activePort);
         mainWindow.webContents.send("port-disconnected");
         activePort = null;
     });

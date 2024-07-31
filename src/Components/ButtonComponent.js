@@ -15,7 +15,11 @@ function ButtonComponent(props) {
         handleStop,
         inputCmd,
         setCurrentCmdIndex,
+        activeButton,
+        handleRepeat,
     } = props;
+
+    const [isPortReady, setIsPortReady] = useState(false);
 
     const [ports, setPorts] = useState([]);
 
@@ -53,6 +57,7 @@ function ButtonComponent(props) {
         try {
             const response = await window.electron.openPort(port);
             console.log(response, port);
+            setIsPortReady(response === "Port opened successfully" || response === "Port already opened");
             window.electron.logAction("Open Port", `Port: ${port}`, "FF00FF00");
         } catch (error) {
             // action, details, color
@@ -90,6 +95,8 @@ function ButtonComponent(props) {
 
     const [isOpen, setIsOpen] = useState(false);
 
+    console.log("isPortReady ==>", isPortReady);
+
     return (
         <div className="w-full flex justify-center items-center">
             <div className="bg-white w-full">
@@ -112,7 +119,7 @@ function ButtonComponent(props) {
                             ))}
                         </select>
 
-                        {/* {!!selectedPort ? <div className="rounded-full w-3 h-3 bg-green-500" /> : <div className="rounded-full w-3 h-3 bg-red-500" />} */}
+                        {isPortReady ? <div className="rounded-full w-3 h-3 bg-green-500" /> : <div className="rounded-full w-3 h-3 bg-red-500" />}
                     </div>
 
                     {errors?.port && <span className="text-xs text-red-400 absolute bottom-0 left-0"> * {errors?.port}</span>}
@@ -130,31 +137,42 @@ function ButtonComponent(props) {
                         </label>
                         <button
                             disabled={!selectedPort}
-                            className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100 disabled:bg-neutral-100"
+                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${activeButton === "save" ? "bg-blue-300" : "hover:bg-neutral-100"}`}
                             onClick={handleSave}
                         >
                             &#128190; Save
                         </button>
                         <button
                             disabled={!selectedPort}
-                            className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100 disabled:bg-neutral-100"
+                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${activeButton === "run" ? "bg-blue-300" : "hover:bg-neutral-100"}`}
                             onClick={handleClickRun}
                         >
                             &#x23E9; Run
                         </button>
                         <button
                             disabled={!selectedPort}
-                            className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100 disabled:bg-neutral-100"
+                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${
+                                activeButton === "pause" ? "bg-blue-300" : "hover:bg-neutral-100"
+                            }`}
                             onClick={handlePause}
                         >
                             ⏸ Pause
                         </button>
                         <button
                             disabled={!selectedPort}
-                            className="border border-neutral-300 px-4 py-2 rounded-md hover:bg-neutral-100 disabled:bg-neutral-100"
+                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${activeButton === "stop" ? "bg-blue-300" : "hover:bg-neutral-100"}`}
                             onClick={handleStop}
                         >
                             &#4; Stop
+                        </button>
+                        <button
+                            disabled={!selectedPort}
+                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${
+                                activeButton === "repeat" ? "bg-blue-300" : "hover:bg-neutral-100"
+                            }`}
+                            onClick={handleRepeat}
+                        >
+                            Repeat
                         </button>
                         {/* <div>
                             <select

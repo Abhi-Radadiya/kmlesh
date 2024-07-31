@@ -17,6 +17,8 @@ function App() {
     const [errorMessage, setErrorMessage] = useState("");
     const [showErrorModal, setShowErrorModal] = useState(false);
 
+    const [activeButton, setActiveButton] = useState();
+
     useEffect(() => {
         const unsubscribe = window.electron.onSerialData((data) => {
             setReceivedMessages((prevMessages) => [...prevMessages, data]);
@@ -34,12 +36,12 @@ function App() {
         };
     }, [sensorMode]);
 
-    // const inputCmd =
-    //     "R1,V ON 2\r\nHOLD 1\r\nR1,PUMP-2.5\r\nHOLD 1\r\nR1,V ON 3,4\r\nHOLD 1\r\nR1,V ON 8,9\r\nHOLD 1\r\nR1,V ON 5,6,7\r\nHOLD 1\r\nR1,V OFF 2\r\nHOLD 1\r\nR1,V OFF 3,4\r\nHOLD 1\r\nR1,V OFF 5,6\r\nHOLD 1\r\nR1,V OFF 7,8,9\r\n\r\n\r\n\r\n\r\nR1,V ON 3,6\r\nHOLD 2\r\nR1,S 2,5000\r\nHOLD 1\r\nR1,V OFF 3,6\r\nHOLD 1\r\nR1,V ON 4\r\nHOLD 2\r\nR1,V OFF 4\r\n";
-
     const executeNextCommand = async (index) => {
         if (pausedRef.current || index >= inputCmd.split("\n").length) {
             setCurrentCmdIndex(0);
+
+            setActiveButton(null);
+
             return;
         }
 
@@ -73,58 +75,10 @@ function App() {
         }
     };
 
-    // const executeNextCommand = async (startIndex) => {
-    //     const commands = inputCmd.split("\n").filter((cmd) => cmd.trim() !== "");
-    //     let index = startIndex;
-
-    //     while (index < commands.length) {
-    //         if (pausedRef.current) {
-    //             setCurrentCmdIndex(index);
-    //             return; // Exit if paused
-    //         }
-
-    //         let command = commands[index];
-    //         window.electron.logAction("Execute Command", command, "FF0000FF");
-
-    //         try {
-    //             switch (true) {
-    //                 case command.includes("V ON"):
-    //                     await handleVOnCommand(command);
-    //                     break;
-    //                 case command.includes("V OFF"):
-    //                     await handleVOffCommand(command);
-    //                     break;
-    //                 case command.includes("HOLD"):
-    //                     await handleHoldCommand(command);
-    //                     break;
-    //                 case command.includes("REP"):
-    //                     await handleRepCommand(command, index);
-    //                     break;
-    //                 case command.includes("S"):
-    //                     await handleSCommand(command);
-    //                     break;
-    //                 case command.includes("Z"):
-    //                     await handleZCommand(command);
-    //                     break;
-    //                 case command.includes("PUMP"):
-    //                     await handlePumpCommand(command);
-    //                     break;
-    //                 default:
-    //                     console.error("Unknown command:", command);
-    //                     window.electron.logAction("Error", `Unknown command: ${command}`, "FFFF0000");
-    //             }
-    //         } catch (error) {
-    //             console.error("Error executing command:", error);
-    //             window.electron.logAction("Error", `Error executing command: ${error.message}`, "FFFF0000");
-    //         }
-
-    //         index++;
-    //         setCurrentCmdIndex(index);
-    //     }
-    // };
-
     const handleClickRun = () => {
         let error = false;
+
+        setActiveButton("run");
 
         if (!thresholdValue) {
             setErrors((prevState) => ({ ...prevState, threshold: "Please add threshold value" }));
@@ -165,6 +119,8 @@ function App() {
     };
 
     const handleSave = () => {
+        setActiveButton("save");
+
         const blob = new Blob([inputCmd], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -294,6 +250,8 @@ function App() {
     };
 
     const handlePause = () => {
+        setActiveButton("pause");
+
         pausedRef.current = true;
         window.electron.logAction("Pause", "Execution paused", "FF00FFFF");
         if (timeoutRef.current) {
@@ -303,6 +261,8 @@ function App() {
     };
 
     const handleStop = () => {
+        setActiveButton("stop");
+
         pausedRef.current = true;
         setCurrentCmdIndex(0);
         setCounter(0);
@@ -311,6 +271,10 @@ function App() {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
         }
+    };
+
+    const handleRepeat = () => {
+        executeNextCommand(0);
     };
 
     return (
@@ -330,6 +294,8 @@ function App() {
                 handleStop={handleStop}
                 inputCmd={inputCmd}
                 setCurrentCmdIndex={setCurrentCmdIndex}
+                activeButton={activeButton}
+                handleRepeat={handleRepeat}
             />
 
             <textarea
