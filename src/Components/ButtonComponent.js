@@ -17,6 +17,8 @@ function ButtonComponent(props) {
         setCurrentCmdIndex,
         activeButton,
         handleRepeat,
+        setShowSelectedLinePopup,
+        lastCmdIndexRef,
     } = props;
 
     const [isPortReady, setIsPortReady] = useState(false);
@@ -33,15 +35,10 @@ function ButtonComponent(props) {
         fetchPortInfo();
     }, []);
 
-    // useEffect(() => {
-    //     const handlePortDisconnection = () => {
-    //         setSelectedPort("");
-    //     };
-
-    //     const cleanup = window.electron.onPortDisconnected(handlePortDisconnection);
-
-    //     return cleanup;
-    // }, []);
+    const repeatMethods = [
+        { label: "Repeat entire file", value: "entire_file" },
+        { label: "Repeat specific file", value: "selected_line" },
+    ];
 
     const onSelectPort = async (port) => {
         setErrors((prevState) => {
@@ -68,6 +65,8 @@ function ButtonComponent(props) {
 
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
+        console.log(`file ==>`, file);
+
         if (file) {
             window.electron.logAction("Upload", `File: ${file.name}`, "FFFFFF");
             props.handleFileUpload(event);
@@ -95,7 +94,19 @@ function ButtonComponent(props) {
 
     const [isOpen, setIsOpen] = useState(false);
 
-    console.log("isPortReady ==>", isPortReady);
+    const [selectedRepeatMethod, setSelectedRepeatMethod] = useState("");
+
+    const onSelectRepeatType = (value) => {
+        setSelectedRepeatMethod(value);
+        if (value === repeatMethods[0].value) {
+            handleRepeat();
+        } else {
+            setShowSelectedLinePopup(true);
+        }
+        lastCmdIndexRef.current = inputCmd.split("\n").length - 1; // Update the ref
+
+        setSelectedRepeatMethod("");
+    };
 
     return (
         <div className="w-full flex justify-center items-center">
@@ -165,7 +176,8 @@ function ButtonComponent(props) {
                         >
                             &#4; Stop
                         </button>
-                        <button
+
+                        {/* <button
                             disabled={!selectedPort}
                             className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${
                                 activeButton === "repeat" ? "bg-blue-300" : "hover:bg-neutral-100"
@@ -173,7 +185,17 @@ function ButtonComponent(props) {
                             onClick={handleRepeat}
                         >
                             Repeat
-                        </button>
+                        </button> */}
+
+                        <select className={`border rounded-md p-2 mr-2 border-neutral-300`} value={selectedRepeatMethod} onChange={(e) => onSelectRepeatType(e.target.value)}>
+                            <option value="">Select a repeat method</option>
+                            {repeatMethods.map((port) => (
+                                <option key={port.value} value={port.value}>
+                                    {port.label}
+                                </option>
+                            ))}
+                        </select>
+
                         {/* <div>
                             <select
                                 id="commandDropdown"

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ButtonComponent from "./Components/ButtonComponent";
+import SelectLineModel from "./Components/SelectLineModel";
 
 function App() {
     const [selectedPort, setSelectedPort] = useState("");
@@ -37,7 +38,7 @@ function App() {
     }, [sensorMode]);
 
     const executeNextCommand = async (index) => {
-        if (pausedRef.current || index >= inputCmd.split("\n").length) {
+        if (pausedRef.current || index >= inputCmd.split("\n").length || lastCmdIndexRef.current < index) {
             setCurrentCmdIndex(0);
 
             setActiveButton(null);
@@ -106,16 +107,29 @@ function App() {
     };
 
     const handleFileUpload = (event) => {
-        const file = event.target.files[0];
+        const fileInput = event.target;
+        const file = fileInput.files[0];
+
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                setInputCmd(e.target.result);
+                setInputCmd((prevState) => {
+                    const totalCmd = prevState + e.target.result;
+
+                    lastCmdIndexRef.current = totalCmd.split("\n").length - 1; // Update the ref
+
+                    return prevState + e.target.result;
+                });
+
                 window.electron.logAction("File Upload", `File content loaded: ${file.name}`, "FF0000FF");
             };
+
             reader.readAsText(file);
             setThresholdValue(1);
         }
+
+        // Reset the input value to allow the same file to be selected again
+        fileInput.value = "";
     };
 
     const handleSave = () => {
@@ -137,13 +151,15 @@ function App() {
             return { ...rest };
         });
 
+        lastCmdIndexRef.current = inputCmd.split("\n").length - 1; // Update the ref
+
         setInputCmd(inputCmd);
     };
 
     const sendPinCommand = async (pin) => {
         try {
             const response = await window.electron.sendData(pin);
-            console.log(response);
+            // console.log(response);
             await new Promise((resolve) => setTimeout(resolve, 50)); // Ensuring a delay between commands
         } catch (error) {
             console.error("Failed to send pin command:", error);
@@ -274,8 +290,15 @@ function App() {
     };
 
     const handleRepeat = () => {
+        lastCmdIndexRef.current = inputCmd.split("\n").length - 1; // Update the ref
+
+        setCurrentCmdIndex(0);
         executeNextCommand(0);
     };
+
+    const [showSelectedLinePopup, setShowSelectedLinePopup] = useState(false);
+
+    const lastCmdIndexRef = useRef(0); // Using a ref instead of state
 
     return (
         <div className="p-4">
@@ -296,6 +319,8 @@ function App() {
                 setCurrentCmdIndex={setCurrentCmdIndex}
                 activeButton={activeButton}
                 handleRepeat={handleRepeat}
+                setShowSelectedLinePopup={setShowSelectedLinePopup}
+                lastCmdIndexRef={lastCmdIndexRef}
             />
 
             <textarea
@@ -332,6 +357,16 @@ function App() {
                         <p className="mt-4">{errorMessage}</p>
                     </div>
                 </div>
+            )}
+
+            {showSelectedLinePopup && (
+                <SelectLineModel
+                    lastCmdIndexRef={lastCmdIndexRef}
+                    setCurrentCmdIndex={setCurrentCmdIndex}
+                    inputCmd={inputCmd}
+                    handleClickClose={() => setShowSelectedLinePopup(false)}
+                    executeNextCommand={executeNextCommand}
+                />
             )}
         </div>
     );

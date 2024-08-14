@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const path = require("path");
 const ExcelJS = require("exceljs");
 const fs = require("fs");
+const { SerialPort } = require("serialport");
 
 const logFilePath = path.join(__dirname, "action_log.xlsx");
 
@@ -45,14 +46,11 @@ ipcMain.handle("log-action", async (event, { action, details, color }) => {
     await logAction(action, details, color);
 });
 
-const { SerialPort } = require("serialport");
-
 let mainWindow;
 let activePort = null;
 
-function createWindow() {
+async function createWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
-    console.log(primaryDisplay);
     let screenDimention = primaryDisplay.workAreaSize;
 
     mainWindow = new BrowserWindow({
@@ -67,7 +65,7 @@ function createWindow() {
 
     // mainWindow.loadURL("http://localhost:3000");
     mainWindow.loadURL("https://kmlesh.vercel.app/");
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on("closed", function () {
         mainWindow = null;
@@ -91,7 +89,6 @@ app.on("activate", function () {
 ipcMain.handle("list-ports", async () => {
     try {
         const ports = await SerialPort.list();
-        // console.log("ports ==> ", ports);
         return ports;
     } catch (error) {
         console.error("Error listing ports:", error);
@@ -99,10 +96,19 @@ ipcMain.handle("list-ports", async () => {
     }
 });
 
+ipcMain.handle("get-port-info", async () => {
+    try {
+        const ports = await SerialPort.list();
+        const selectedPort = activePort ? activePort.path : null;
+        return { ports, selectedPort };
+    } catch (error) {
+        console.error("Error fetching port info:", error);
+        throw error;
+    }
+});
+
 // Manage serial port connections
 ipcMain.handle("open-port", async (event, portPath) => {
-    console.log("Opening port:", portPath);
-
     if (!portPath) {
         throw new Error("No port path provided");
     }
@@ -127,6 +133,12 @@ ipcMain.handle("open-port", async (event, portPath) => {
         mainWindow.webContents.send("serial-data", data.toString());
     });
 
+    activePort.on("close", () => {
+        console.log("Port closed", activePort);
+        mainWindow.webContents.send("port-disconnected");
+        activePort = null;
+    });
+
     activePort.on("error", (err) => {
         console.error("Serial port error:", err);
     });
@@ -149,21 +161,4 @@ ipcMain.handle("send-data", async (event, data) => {
             resolve("Data sent successfully");
         });
     });
-});
-
-ipcMain.handle("close-port", async () => {
-    if (activePort) {
-        return new Promise((resolve, reject) => {
-            activePort.close((err) => {
-                if (err) {
-                    console.error("Error closing port:", err);
-                    return reject(err);
-                }
-                activePort = null;
-                resolve("Port closed successfully");
-            });
-        });
-    } else {
-        return "No active port to close";
-    }
 });
