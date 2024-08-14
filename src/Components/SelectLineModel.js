@@ -47,12 +47,12 @@ export default function SelectLineModel(props) {
                         </span>
                     </div>
 
-                    <div className="flex flex-row items-center gap-6">
-                        <div className="relative">
+                    <div className="flex flex-row items-center gap-6 mt-4">
+                        <div className="relative w-1/2">
                             <div>
                                 <button
                                     type="button"
-                                    className="border rounded-md p-2 border-neutral-300"
+                                    className="w-full border rounded-md p-2 border-neutral-300"
                                     onClick={() => setIsOpen((prevState) => ({ startCommand: !prevState.startCommand, endCommand: false }))}
                                 >
                                     {selectedCommand.startCommand || "Select start command"} <span className="ml-2">&#9662;</span>
@@ -76,11 +76,11 @@ export default function SelectLineModel(props) {
                             )}
                         </div>
 
-                        <div className="relative">
+                        <div className="relative w-1/2">
                             <div>
                                 <button
                                     type="button"
-                                    className="border rounded-md p-2 border-neutral-300"
+                                    className="w-full border rounded-md p-2 border-neutral-300"
                                     onClick={() => setIsOpen((prevState) => ({ startCommand: false, endCommand: !prevState.endCommand }))}
                                     disabled={startIndex === null} // Disable if no start command is selected
                                 >
@@ -110,7 +110,11 @@ export default function SelectLineModel(props) {
                         </div>
                     </div>
 
-                    <button className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100`} onClick={handleSave}>
+                    <button
+                        disabled={!selectedCommand.endCommand}
+                        className={`border border-neutral-300 px-4 py-2 w-full mt-6 rounded-md disabled:bg-neutral-100 disabled:cursor-not-allowed`}
+                        onClick={handleSave}
+                    >
                         Run
                     </button>
                 </div>

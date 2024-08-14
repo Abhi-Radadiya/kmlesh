@@ -177,17 +177,12 @@ function ButtonComponent(props) {
                             &#4; Stop
                         </button>
 
-                        {/* <button
-                            disabled={!selectedPort}
-                            className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${
-                                activeButton === "repeat" ? "bg-blue-300" : "hover:bg-neutral-100"
-                            }`}
-                            onClick={handleRepeat}
+                        <select
+                            disabled={!inputCmd.length}
+                            className={`border rounded-md p-2 mr-2 border-neutral-300 disabled:bg-neutral-100 disabled:cursor-not-allowed`}
+                            value={selectedRepeatMethod}
+                            onChange={(e) => onSelectRepeatType(e.target.value)}
                         >
-                            Repeat
-                        </button> */}
-
-                        <select className={`border rounded-md p-2 mr-2 border-neutral-300`} value={selectedRepeatMethod} onChange={(e) => onSelectRepeatType(e.target.value)}>
                             <option value="">Select a repeat method</option>
                             {repeatMethods.map((port) => (
                                 <option key={port.value} value={port.value}>
@@ -196,28 +191,14 @@ function ButtonComponent(props) {
                             ))}
                         </select>
 
-                        {/* <div>
-                            <select
-                                id="commandDropdown"
-                                className={`border rounded-md p-2 mr-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
-                                value={selectedCommand}
-                                onChange={handleCommandChange}
-                            >
-                                <option value="" disabled>
-                                    Select a command
-                                </option>
-                                {commands.map((cmd, index) => (
-                                    <option key={index} value={cmd}>
-                                        {cmd}
-                                    </option>
-                                ))}
-                            </select>
-                        </div> */}
                         <div className="relative inline-block text-left">
                             <div>
                                 <button
+                                    disabled={!inputCmd.length}
                                     type="button"
-                                    className={`border rounded-md p-2 ${errors?.port ? "border-red-400" : "border-neutral-300"}`}
+                                    className={`border rounded-md p-2 disabled:bg-neutral-100 disabled:cursor-not-allowed ${
+                                        errors?.port ? "border-red-400" : "border-neutral-300"
+                                    }`}
                                     onClick={() => setIsOpen(!isOpen)}
                                 >
                                     {selectedCommand || "Select a command"} <span className="ml-2">&#9662;</span>
