@@ -19,6 +19,7 @@ function ButtonComponent(props) {
         handleRepeat,
         setShowSelectedLinePopup,
         lastCmdIndexRef,
+        setShowUploadSpecificFileToRepeat,
     } = props;
 
     const [isPortReady, setIsPortReady] = useState(false);
@@ -37,7 +38,8 @@ function ButtonComponent(props) {
 
     const repeatMethods = [
         { label: "Repeat entire file", value: "entire_file" },
-        { label: "Repeat specific file", value: "selected_line" },
+        { label: "Repeat specific file", value: "specific_file" },
+        { label: "Repeat specific section", value: "selected_line" },
     ];
 
     const onSelectPort = async (port) => {
@@ -65,7 +67,6 @@ function ButtonComponent(props) {
 
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
-        console.log(`file ==>`, file);
 
         if (file) {
             window.electron.logAction("Upload", `File: ${file.name}`, "FFFFFF");
@@ -100,9 +101,12 @@ function ButtonComponent(props) {
         setSelectedRepeatMethod(value);
         if (value === repeatMethods[0].value) {
             handleRepeat();
-        } else {
+        } else if (value === "selected_line") {
             setShowSelectedLinePopup(true);
+        } else if (value === "specific_file") {
+            setShowUploadSpecificFileToRepeat(true);
         }
+
         lastCmdIndexRef.current = inputCmd.split("\n").length - 1; // Update the ref
 
         setSelectedRepeatMethod("");

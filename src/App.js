@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ButtonComponent from "./Components/ButtonComponent";
 import SelectLineModel from "./Components/SelectLineModel";
+import UploadSpecificFileToRepeatModal from "./Components/UploadSpecificFileToRepeatModal";
 
 function App() {
     const [selectedPort, setSelectedPort] = useState("");
@@ -300,6 +301,8 @@ function App() {
 
     const lastCmdIndexRef = useRef(0); // Using a ref instead of state
 
+    const [showUploadSpecificFileToRepeat, setShowUploadSpecificFileToRepeat] = useState(false);
+
     return (
         <div className="p-4">
             <ButtonComponent
@@ -321,6 +324,7 @@ function App() {
                 handleRepeat={handleRepeat}
                 setShowSelectedLinePopup={setShowSelectedLinePopup}
                 lastCmdIndexRef={lastCmdIndexRef}
+                setShowUploadSpecificFileToRepeat={setShowUploadSpecificFileToRepeat}
             />
 
             <textarea
@@ -366,6 +370,17 @@ function App() {
                     inputCmd={inputCmd}
                     handleClickClose={() => setShowSelectedLinePopup(false)}
                     executeNextCommand={executeNextCommand}
+                />
+            )}
+
+            {showUploadSpecificFileToRepeat && (
+                <UploadSpecificFileToRepeatModal
+                    setInputCmd={setInputCmd}
+                    setThresholdValue={setThresholdValue}
+                    handleClickClose={() => {
+                        console.log("object");
+                        setShowUploadSpecificFileToRepeat(false);
+                    }}
                 />
             )}
         </div>
