@@ -63,8 +63,8 @@ async function createWindow() {
         },
     });
 
-    // mainWindow.loadURL("http://localhost:3000");
-    mainWindow.loadURL("https://kmlesh.vercel.app/");
+    mainWindow.loadURL("http://localhost:3000");
+    // mainWindow.loadURL("https://kmlesh.vercel.app/");
     mainWindow.webContents.openDevTools();
 
     mainWindow.on("closed", function () {

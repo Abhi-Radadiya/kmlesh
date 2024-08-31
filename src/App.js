@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ButtonComponent from "./Components/ButtonComponent";
 import SelectLineModel from "./Components/SelectLineModel";
 import UploadSpecificFileToRepeatModal from "./Components/UploadSpecificFileToRepeatModal";
+import { uploadData } from "./function/googleSheetConfig";
 
 function App() {
     const [selectedPort, setSelectedPort] = useState("");
@@ -48,7 +49,8 @@ function App() {
         }
 
         let command = inputCmd.split("\n")[index].toUpperCase();
-        window.electron.logAction("Execute Command", command, "FF0000FF");
+
+        uploadData({ action: `Execute Command ${command}`, success: "Success" });
 
         try {
             if (command.includes("V ON")) {
@@ -68,7 +70,8 @@ function App() {
             }
         } catch (error) {
             console.error("Error executing command:", error);
-            window.electron.logAction("Error", `Error executing command: ${error.message}`, "FFFF0000");
+
+            uploadData({ action: `Error executing command: ${error.message}`, success: "Error" });
         }
 
         if (!pausedRef.current) {
@@ -85,13 +88,13 @@ function App() {
         if (!thresholdValue) {
             setErrors((prevState) => ({ ...prevState, threshold: "Please add threshold value" }));
             error = true;
-            window.electron.logAction("Error", "Threshold value is missing", "FFFF0000");
+            uploadData({ action: "Run", success: false, error: "Threshold value is missing" });
         }
 
         if (!inputCmd?.length) {
             setErrors((prevState) => ({ ...prevState, inputCmd: "Please enter commands" }));
             error = true;
-            window.electron.logAction("Error", "Commands are missing", "FFFF0000");
+            uploadData({ action: "Run", success: false, error: "Commands are missing" });
         }
 
         if (error) {
@@ -121,8 +124,6 @@ function App() {
 
                     return prevState + e.target.result;
                 });
-
-                window.electron.logAction("File Upload", `File content loaded: ${file.name}`, "FF0000FF");
             };
 
             reader.readAsText(file);
@@ -143,7 +144,7 @@ function App() {
         a.download = "commands.txt";
         a.click();
         URL.revokeObjectURL(url);
-        window.electron.logAction("Save File", "File saved as commands.txt", "FF00FFFF");
+        uploadData({ action: `Save File`, success: "Success" });
     };
 
     const handleInputCmd = (inputCmd) => {
@@ -270,7 +271,9 @@ function App() {
         setActiveButton("pause");
 
         pausedRef.current = true;
-        window.electron.logAction("Pause", "Execution paused", "FF00FFFF");
+
+        uploadData({ action: `Pause`, success: "Success" });
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
@@ -283,7 +286,9 @@ function App() {
         pausedRef.current = true;
         setCurrentCmdIndex(0);
         setCounter(0);
-        window.electron.logAction("Stop", "Execution stopped", "FF00FFFF");
+
+        uploadData({ action: `Stop`, success: "Seccess" });
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
@@ -292,14 +297,14 @@ function App() {
 
     const handleRepeat = () => {
         lastCmdIndexRef.current = inputCmd.split("\n").length - 1; // Update the ref
-
+        uploadData({ action: `Repeat File`, success: "Success" });
         setCurrentCmdIndex(0);
         executeNextCommand(0);
     };
 
     const [showSelectedLinePopup, setShowSelectedLinePopup] = useState(false);
 
-    const lastCmdIndexRef = useRef(0); // Using a ref instead of state
+    const lastCmdIndexRef = useRef(0);
 
     const [showUploadSpecificFileToRepeat, setShowUploadSpecificFileToRepeat] = useState(false);
 

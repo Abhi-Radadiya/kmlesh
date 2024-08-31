@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { uploadData } from "../function/googleSheetConfig";
 
 function ButtonComponent(props) {
     const {
@@ -48,19 +49,16 @@ function ButtonComponent(props) {
             return { ...rest };
         });
         setSelectedPort(port);
-        window.electron.logAction("Port Selection", `Port: ${port}`, "FFFFFF");
         openPort(port);
     };
 
     const openPort = async (port) => {
         try {
             const response = await window.electron.openPort(port);
-            console.log(response, port);
+            uploadData({ action: `Open Port ${port}`, success: "Success" });
             setIsPortReady(response === "Port opened successfully" || response === "Port already opened");
-            window.electron.logAction("Open Port", `Port: ${port}`, "FF00FF00");
         } catch (error) {
-            // action, details, color
-            window.electron.logAction("Error : Open Port", `${port}`, "ff0000");
+            uploadData({ action: `Open Port ${port}`, success: "Error", error: error });
             console.log("Failed to open port:", error);
         }
     };
@@ -69,7 +67,7 @@ function ButtonComponent(props) {
         const file = event.target.files[0];
 
         if (file) {
-            window.electron.logAction("Upload", `File: ${file.name}`, "FFFFFF");
+            uploadData({ action: `Upload file ${file.name}`, success: "Success" });
             props.handleFileUpload(event);
         }
     };
@@ -80,7 +78,7 @@ function ButtonComponent(props) {
             const { threshold, ...rest } = prevState;
             return { ...rest };
         });
-        window.electron.logAction("Enter Threshold", `Threshold: ${threshold}`, "FFFFFF");
+        uploadData({ action: `Enter Threshold : ${threshold}`, success: "Success" });
     };
 
     const [selectedCommand, setSelectedCommand] = useState("");
@@ -88,6 +86,7 @@ function ButtonComponent(props) {
     const commands = inputCmd.split("\n").filter((cmd) => cmd.trim() !== "");
 
     const handleCommandChange = async (command, index) => {
+        uploadData({ action: `Command Selection ${command}`, success: "Success" });
         setSelectedCommand(command);
         setCurrentCmdIndex(index);
         setIsOpen(false);
@@ -99,6 +98,7 @@ function ButtonComponent(props) {
 
     const onSelectRepeatType = (value) => {
         setSelectedRepeatMethod(value);
+
         if (value === repeatMethods[0].value) {
             handleRepeat();
         } else if (value === "selected_line") {

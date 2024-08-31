@@ -1,4 +1,5 @@
 import React from "react";
+import { uploadData } from "../function/googleSheetConfig";
 
 export default function UploadSpecificFileToRepeatModal(props) {
     const { handleClickClose, setInputCmd, setThresholdValue } = props;
@@ -14,7 +15,7 @@ export default function UploadSpecificFileToRepeatModal(props) {
             reader.onload = (e) => {
                 setInputCmd(e.target.result);
 
-                window.electron.logAction("File Upload", `File content loaded: ${file.name}`, "FF0000FF");
+                uploadData({ action: `Upload file ${file.name}`, success: "Success" });
             };
 
             reader.readAsText(file);
@@ -24,10 +25,6 @@ export default function UploadSpecificFileToRepeatModal(props) {
         handleClickClose();
 
         fileInput.value = "";
-
-        if (file) {
-            window.electron.logAction("Upload", `File: ${file.name}`, "FFFFFF");
-        }
     };
 
     return (
