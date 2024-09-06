@@ -3,6 +3,8 @@ import ButtonComponent from "./Components/ButtonComponent";
 import SelectLineModel from "./Components/SelectLineModel";
 import UploadSpecificFileToRepeatModal from "./Components/UploadSpecificFileToRepeatModal";
 import { uploadData } from "./function/googleSheetConfig";
+import FileUploadComponent from "./Components/FileUpload";
+import CommandFinishedPopup from "./Components/CommandFinishedPopup";
 
 function App() {
     const [selectedPort, setSelectedPort] = useState("");
@@ -14,6 +16,7 @@ function App() {
     const [counter, setCounter] = useState(0);
     const timeoutRef = useRef(null);
     const pausedRef = useRef(false);
+    const lastCmdIndexRef = useRef(0);
 
     const [sensorMode, setSensorMode] = useState(1);
 
@@ -88,13 +91,13 @@ function App() {
         if (!thresholdValue) {
             setErrors((prevState) => ({ ...prevState, threshold: "Please add threshold value" }));
             error = true;
-            uploadData({ action: "Run", success: false, error: "Threshold value is missing" });
+            uploadData({ action: "Run", success: "Error", error: "Threshold value is missing" });
         }
 
         if (!inputCmd?.length) {
             setErrors((prevState) => ({ ...prevState, inputCmd: "Please enter commands" }));
             error = true;
-            uploadData({ action: "Run", success: false, error: "Commands are missing" });
+            uploadData({ action: "Run", success: "Error", error: "Commands are missing" });
         }
 
         if (error) {
@@ -125,6 +128,8 @@ function App() {
                     return prevState + e.target.result;
                 });
             };
+
+            uploadData({ action: "Upload File", success: "Success" });
 
             reader.readAsText(file);
             setThresholdValue(1);
@@ -287,7 +292,7 @@ function App() {
         setCurrentCmdIndex(0);
         setCounter(0);
 
-        uploadData({ action: `Stop`, success: "Seccess" });
+        uploadData({ action: `Stop`, success: "Success" });
 
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
@@ -304,9 +309,11 @@ function App() {
 
     const [showSelectedLinePopup, setShowSelectedLinePopup] = useState(false);
 
-    const lastCmdIndexRef = useRef(0);
-
     const [showUploadSpecificFileToRepeat, setShowUploadSpecificFileToRepeat] = useState(false);
+
+    const handleCloseFinishPopup = () => {
+        setCurrentCmdIndex(0);
+    };
 
     return (
         <div className="p-4">
@@ -331,6 +338,10 @@ function App() {
                 lastCmdIndexRef={lastCmdIndexRef}
                 setShowUploadSpecificFileToRepeat={setShowUploadSpecificFileToRepeat}
             />
+
+            <FileUploadComponent setErrors={setErrors} setInputCmd={setInputCmd} lastCmdIndexRef={lastCmdIndexRef} disabled={!selectedPort} />
+
+            <CommandFinishedPopup isOpen={lastCmdIndexRef.current === currentCmdIndex && !!currentCmdIndex} closePopup={handleCloseFinishPopup} />
 
             <textarea
                 disabled={!selectedPort}

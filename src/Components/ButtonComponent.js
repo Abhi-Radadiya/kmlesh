@@ -34,6 +34,8 @@ function ButtonComponent(props) {
             // setSelectedPort(selectedPort ? `Currently selected port: ${selectedPort}` : "No port selected");
         };
 
+        console.clear();
+
         fetchPortInfo();
     }, []);
 
@@ -142,14 +144,14 @@ function ButtonComponent(props) {
 
                 <div className="flex flex-col justify-between">
                     <div className="flex items-center gap-4 mb-4">
-                        <input disabled={!selectedPort} type="file" accept=".txt" onChange={handleFileUpload} className="hidden" id="file-upload" />
+                        {/* <input disabled={!selectedPort} type="file" accept=".txt" onChange={handleFileUpload} className="hidden" id="file-upload" />
                         <label
                             aria-disabled={!selectedPort}
                             htmlFor="file-upload"
                             className="border border-neutral-300 hover:bg-neutral-100 px-4 py-2 rounded-md cursor-pointer disabled:bg-neutral-100"
                         >
                             Upload
-                        </label>
+                        </label> */}
                         <button
                             disabled={!selectedPort}
                             className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${activeButton === "save" ? "bg-blue-300" : "hover:bg-neutral-100"}`}
@@ -158,7 +160,7 @@ function ButtonComponent(props) {
                             &#128190; Save
                         </button>
                         <button
-                            disabled={!selectedPort}
+                            // disabled={!selectedPort}
                             className={`border border-neutral-300 px-4 py-2 rounded-md disabled:bg-neutral-100 ${activeButton === "run" ? "bg-blue-300" : "hover:bg-neutral-100"}`}
                             onClick={handleClickRun}
                         >
@@ -242,7 +244,7 @@ function ButtonComponent(props) {
 
                             <div className="relative">
                                 <input
-                                    disabled={!selectedPort}
+                                    // disabled={!selectedPort}
                                     type="number"
                                     value={thresholdValue ?? ""}
                                     onChange={(e) => handleEnterThreshold(e.target.value)}
